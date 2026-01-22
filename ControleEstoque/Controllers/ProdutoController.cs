@@ -104,7 +104,6 @@ namespace ControleEstoque.Controllers
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            aasdada
             var produtos = _service.ObterTodos();
 
             var produto = produtos.FirstOrDefault(p => p.Id == id);
