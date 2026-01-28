@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ControleEstoque.Models;
 using ControleEstoque.DTOs;
-using ControleEstoque.Services;
-
 namespace ControleEstoque.Controllers
 {
     [ApiController]
@@ -22,7 +20,6 @@ namespace ControleEstoque.Controllers
         {
             var produtos = _service.ObterTodos();
 
-
             var resultado = produtos.Select(p => new ProdutoDto
             {
                 Id = p.Id,
@@ -39,7 +36,6 @@ namespace ControleEstoque.Controllers
         [HttpPost]
         public IActionResult CriarProduto(CriarProdutoDto dto)
         {
-
             var produto = new Produto
             {
                 Nome = dto.Nome,
@@ -48,75 +44,55 @@ namespace ControleEstoque.Controllers
             };
 
             var criado = _service.Criar(produto);
-
-            return CreatedAtAction(nameof(Get), new { id = produto.Id }, produto);
+            return CreatedAtAction(nameof(Get), new { id = criado.Id }, criado);
         }
 
-        [HttpPut("{id}/entrada")]
-        public IActionResult EntradaEstoque(int id, [FromBody] QuantidadeDto dto)
+        // PUT api/produto/{id}
+        [HttpPut("{id}")]
+        public IActionResult AtualizarProduto(int id, CriarProdutoDto dto)
         {
-            if (dto.Quantidade <= 0)
-            {
-                return BadRequest("A quantidade deve ser maior que zero.");
-            }
-            
-            var produtos = _service.ObterTodos();
-
-            foreach (var produto in produtos)
-            {
-                if (produto.Id == id)
-                {
-                    produto.Quantidade += dto.Quantidade;
-                    return Ok(produto);
-                }
-            }
-
-            return NotFound("Produto não encontrado.");
-        }
-
-        [HttpPut("{id}/saida")]
-        public IActionResult SaidaEstoque(int id, [FromBody] QuantidadeDto dto)
-        {
-            if (dto.Quantidade <= 0)
-            {
-                return BadRequest("A quantidade deve ser maior que zero.");
-            }
-
-            var produtos = _service.ObterTodos();
-
-            foreach (var produto in produtos)
-            {
-                if (produto.Id == id)
-                {
-                    if (produto.Quantidade < dto.Quantidade)
-                    {
-                        return BadRequest("Estoque insuficiente.");
-                    }
-
-                    produto.Quantidade -= dto.Quantidade;
-                    return Ok(produto);
-                }
-            }
-
-            return NotFound("Produto não encontrado.");
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var produtos = _service.ObterTodos();
-
-            var produto = produtos.FirstOrDefault(p => p.Id == id);
+            var produto = _service.Atualizar(id, dto);
 
             if (produto == null)
                 return NotFound("Produto não encontrado");
 
-            produtos.Remove(produto);
-
-            return NoContent(); // 204
+            return Ok(produto);
         }
 
+        // PUT api/produto/{id}/entrada
+        [HttpPut("{id}/entrada")]
+        public IActionResult EntradaEstoque(int id, QuantidadeDto dto)
+        {
+            var produto = _service.EntradaEstoque(id, dto.Quantidade);
 
+            if (produto == null)
+                return BadRequest(new { mensagem = "Produto não encontrado ou quantidade inválida" });
 
+            return Ok(produto);
+        }
+
+        // PUT api/produto/{id}/saida
+        [HttpPut("{id}/saida")]
+        public IActionResult SaidaEstoque(int id, QuantidadeDto dto)
+        {
+            var produto = _service.SaidaEstoque(id, dto.Quantidade);
+
+            if (produto == null)
+                return BadRequest(new { mensagem = "Produto não encontrado ou estoque insuficiente" });
+
+            return Ok(produto);
+        }
+
+        // DELETE api/produto/{id}
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var removido = _service.Remover(id);
+
+            if (!removido)
+                return NotFound(new { mensagem = "Produto não encontrado" });
+
+            return NoContent();
+        }
     }
 }

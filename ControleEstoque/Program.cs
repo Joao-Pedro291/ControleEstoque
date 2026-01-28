@@ -1,5 +1,3 @@
-using ControleEstoque.Services;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers
